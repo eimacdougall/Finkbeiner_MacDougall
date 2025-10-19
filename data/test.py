@@ -12,7 +12,7 @@ def compare_predicted(pred, actual):
         print("WRONG", labels[pred], labels[actual])
 
 #imports
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 import mnist_reader
@@ -21,7 +21,7 @@ import sklearn as sk
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 from sklearn.preprocessing import Normalizer
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 import numpy as np
 from sklearn import metrics
 
@@ -86,8 +86,29 @@ lr_deg3 = Pipeline([
 
 #######################################################################
 #regression model tests/examples <get RMSE/MAE
+    # preprosess data bc we want std of each 
+X_std = StandardScaler().fit_transform(X_train)
+
     #linear regression
+        #okay i have zero idea how to interpret this but it works (runs and returns a number lmao)
+
+reg = LinearRegression().fit(X_std, y_train)
+print(reg.score(X_std, y_train))
+print("-->Linear Regression Coefficients")
+print(reg.coef_)
+print("-->Linear Regression Intercept")
+print(reg.intercept_)
+print("-->Linear Regression Prediction vs Actual")
+print(reg.predict(X_std[0:2]))
+print(y_train[0:2])
+        
     #decision tree
+detree = DecisionTreeRegressor().fit(X_std, y_train)
+print("-->Decision Tree Regression Score")
+print(detree.score(X_std, y_train))
+print("-->Decision Tree Regression Prediction vs Actual")
+print(detree.predict(X_std[0:2]))
+print(y_train[0:2])
 
 
 #idk figure out what the to do with matplotlib 
