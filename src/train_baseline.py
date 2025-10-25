@@ -25,6 +25,17 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
     scaler_path = os.path.join("models", "scaler.pkl")
     joblib.dump(scaler, scaler_path)
 
+    #Plots for EDA
+    target_plot = os.path.join("models", "target_distribution.png")
+    evaluate.plot_target_distribution(y_train, labels, save_path=target_plot)
+
+    #Heatmap or boxplot of feature correlations
+    #This shit takes way to long for all samples with heatmap
+    #For boxplot it makes a grey blob because of the dataset size
+    #Probably just reduce the amount of data being fed for this
+    corr_plot = os.path.join("models", "feature_correlation_heatmap.png")
+    evaluate.plot_feature_correlations(X_train_proc, save_path=corr_plot)
+
     models = {
         "Naive Bayes": MultinomialNB(),
         "Logistic Regression": LogisticRegression(max_iter=2000, solver="lbfgs")
@@ -63,6 +74,10 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             means_path = os.path.join("models", f"{name.replace(' ', '_')}_feature_means.png")
             evaluate.plot_naive_bayes_means(model, labels, save_path=means_path)
 
+        #Not sure how useful this is for classification (Naive Bayes) but whatever
+        residuals_path = os.path.join("models", f"{name.replace(' ', '_')}_residuals.png")
+        evaluate.plot_residuals_vs_predicted(y_test, y_pred, save_path=residuals_path)
+
         #Log everything to MLflow
         with mlflow.start_run(run_name=name):
             mlflow.log_param("model", name)
@@ -76,10 +91,16 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             mlflow.log_artifact(pred_path)
             if name == "Naive Bayes":
                 mlflow.log_artifact(means_path)
+            if residuals_path:
+                mlflow.log_artifact(residuals_path)
 
     #Accuracy comparison plot
     acc_path = os.path.join("models", "model_accuracy_comparison.png")
     evaluate.plot_model_accuracies(list(models.keys()), accuracies, save_path=acc_path)
+
+    # Log dataset-level plots (once)
+    mlflow.log_artifact(target_plot)
+    mlflow.log_artifact(corr_plot)
     mlflow.log_artifact(acc_path)
 
 if __name__ == "__main__":
