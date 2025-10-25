@@ -91,4 +91,64 @@ lr_deg3 = Pipeline([
 
 
 #idk figure out what the to do with matplotlib 
+import matplotlib.pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay
 
+def show_predictions(model_name, X, y_true, y_pred, n=10):
+    plt.figure(figsize=(15, 4))
+    for i in range(n):
+        plt.subplot(2, n//2, i+1)
+        plt.imshow(X[i].reshape(28, 28), cmap='gray')
+        color = "green" if y_true[i] == y_pred[i] else "red"
+        plt.title(f"{labels[y_pred[i]]}\n({labels[y_true[i]]})", color=color, fontsize=9)
+        plt.axis('off')
+    plt.suptitle(f"{model_name} Predictions (Green=Correct, Red=Wrong)", fontsize=14)
+    plt.tight_layout()
+    plt.show()
+
+# Example usage
+show_predictions("Naive Bayes", X_test, y_test, mnd_y_pred_class)
+show_predictions("Logistic Regression", X_test, y_test, mlog_y_pred_class)
+
+# Naive Bayes confusion matrix
+plt.figure(figsize=(8, 8))
+ConfusionMatrixDisplay.from_predictions(y_test, mnd_y_pred_class, display_labels=labels, cmap="Blues", xticks_rotation=45)
+plt.title("Naive Bayes Confusion Matrix")
+plt.show()
+
+# Logistic Regression confusion matrix
+plt.figure(figsize=(8, 8))
+ConfusionMatrixDisplay.from_predictions(y_test, mlog_y_pred_class, display_labels=labels, cmap="Greens", xticks_rotation=45)
+plt.title("Logistic Regression Confusion Matrix")
+plt.show()
+
+accuracies = [
+    metrics.accuracy_score(y_test, mnd_y_pred_class),
+    metrics.accuracy_score(y_test, mlog_y_pred_class)
+]
+models = ['Naive Bayes', 'Logistic Regression']
+
+plt.bar(models, accuracies, color=['skyblue', 'lightgreen'])
+plt.title("Model Accuracy Comparison")
+plt.ylabel("Accuracy")
+for i, v in enumerate(accuracies):
+    plt.text(i, v + 0.005, f"{v:.3f}", ha='center', fontweight='bold')
+plt.ylim(0, 1)
+plt.show()
+
+import numpy as np
+
+conf_mat = metrics.confusion_matrix(y_test, mnd_y_pred_class)
+np.fill_diagonal(conf_mat, 0)
+most_confused = np.unravel_index(conf_mat.argmax(), conf_mat.shape)
+print(f"Naive Bayes most confused: {labels[most_confused[0]]} vs {labels[most_confused[1]]}")
+
+means = np.exp(mnb.feature_log_prob_).reshape(10, 28, 28)
+plt.figure(figsize=(12, 6))
+for i in range(10):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(means[i], cmap='gray')
+    plt.title(labels[i])
+    plt.axis('off')
+plt.suptitle("Naive Bayes Learned Feature Means per Class", fontsize=14)
+plt.show()
