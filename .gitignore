@@ -2,6 +2,10 @@
 __pycache__/
 *.py[codz]
 *$py.class
+data/fashion/
+mlruns/
+models/
+mlartifacts/
 
 # C extensions
 *.so

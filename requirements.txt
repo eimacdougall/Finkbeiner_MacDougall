@@ -5,3 +5,5 @@ numpy>=2.0.2
 pandas>=2.2.2
 matplotlib>=3.9.2
 tensorflow>=2.17.0
+
+seaborn>=0.12.2
