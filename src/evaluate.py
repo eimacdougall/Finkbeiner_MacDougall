@@ -8,6 +8,24 @@ def evaluate_model(y_true, y_pred):
     conf_matrix = metrics.confusion_matrix(y_true, y_pred)
     return {"accuracy": accuracy, "conf_matrix": conf_matrix}
 
+def evaluate_regressive_model(y_true, y_pred):
+    meanerror = metrics.mean_absolute_error(y_true, y_pred)
+    return {"MAE": meanerror}
+
+def plot_residuals(y_true, y_pred, title = "residuals", save_path=None):
+    residuals = y_true - y_pred
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y_pred, residuals, alpha=0.5)
+    plt.axhline(0, color='red', linestyle='--')
+    plt.xlabel("Predicted Values")
+    plt.ylabel("Residuals")
+    plt.title(title)
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
 def plot_confusion_matrix(y_true, y_pred, labels, title="Confusion Matrix", cmap="Blues", normalize=False, save_path=None):
     cm = metrics.confusion_matrix(y_true, y_pred)
     if normalize:
@@ -77,3 +95,17 @@ def plot_naive_bayes_means(model, labels, save_path=None):
         plt.savefig(save_path, bbox_inches="tight")
     plt.show()
     plt.close()
+
+def plot_regression_predictions(y_true, y_pred, title="Regression Predictions", save_path=None):
+    plt.figure(figsize=(8, 6))
+    plt.scatter(y_true, y_pred, alpha=0.5)
+    plt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 'r--')
+    plt.xlabel("True Values")
+    plt.ylabel("Predicted Values")
+    plt.title(title)
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
+    plt.close()
+

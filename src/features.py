@@ -10,3 +10,9 @@ def preprocess(X_train, preprocess_method="minmax"):
         scaler = MinMaxScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     return X_train_scaled, scaler
+
+def regression_preprocess(X_train):
+    #Apply scaling/normalization and return transformed sets
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    return X_train_scaled, scaler
