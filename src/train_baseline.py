@@ -65,9 +65,16 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
         joblib.dump(model, model_path)
 
         #Plot and save artifacts
+        
+        #target distribution
+        dist_path = os.path.join("models", f"{name.replace(' ', '_')}_target_distribution.png")
+        evaluate.plot_target_distribution(y_test, labels, title=f"{name} Target Distribution", save_path=dist_path)
+
+        #confusion matrix
         cm_path = os.path.join("models", f"{name.replace(' ', '_')}_confusion_matrix.png")
         evaluate.plot_confusion_matrix(y_test, y_pred, labels, title=f"{name} Confusion Matrix", save_path=cm_path)
 
+        #prediction examples
         pred_path = os.path.join("models", f"{name.replace(' ', '_')}_predictions.png")
         evaluate.show_predictions(name, X_test, y_test, y_pred, labels, n=10, save_path=pred_path)
 
@@ -86,12 +93,14 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             #Log plot artifacts
             mlflow.log_artifact(cm_path)
             mlflow.log_artifact(pred_path)
+            mlflow.log_artifact(dist_path)
             if name == "Naive Bayes":
                 mlflow.log_artifact(means_path)
     #classification accuracy comparison plot
     acc_path = os.path.join("models", "model_accuracy_comparison.png")
     evaluate.plot_model_accuracies(list(classification_models.keys()), accuracies, save_path=acc_path)
-    mlflow.log_artifact(acc_path)
+    with mlflow.start_run(run_name="Model_Accuracy_Comparison"):
+        mlflow.log_artifact(acc_path)
 
 
     ##regression 

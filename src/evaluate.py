@@ -109,3 +109,15 @@ def plot_regression_predictions(y_true, y_pred, title="Regression Predictions", 
     plt.show()
     plt.close()
 
+def plot_target_distribution(y, labels, title="Target Distribution", save_path=None):
+    plt.figure(figsize=(8, 6))
+    sns.countplot(x=y)
+    plt.xticks(ticks=range(len(labels)), labels=labels)
+    plt.title(title)
+    plt.xlabel("Classes")
+    plt.ylabel("Count")
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
+    plt.close()
