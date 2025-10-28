@@ -21,15 +21,19 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
     X_test, y_test = data.load_mnist('data/fashion', kind='t10k')
 
     #Preprocess
-    X_train_proc, scaler = features.preprocess(X_train, preprocess_method)
-    X_test_proc = scaler.transform(X_test)
+    X_train_proc, X_test_proc, scaler = features.preprocess(X_train, X_test, preprocess_method)
+    #X_test_proc = scaler.transform(X_test)
+
+    #Save scaler
+    scaler_path = os.path.join("models", "scaler.pkl")
+    joblib.dump(scaler, scaler_path)
 
     #std values for regression (contrast)
     X_train_reg_proc, scaler = features.regression_preprocess(X_train)
     X_test_reg_proc = scaler.transform(X_test)
 
     #Save scaler
-    scaler_path = os.path.join("models", "scaler.pkl")
+    scaler_path = os.path.join("models", "regression_scaler.pkl")
     joblib.dump(scaler, scaler_path)
 
     classification_models = {
@@ -68,7 +72,7 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
         
         #target distribution
         dist_path = os.path.join("models", f"{name.replace(' ', '_')}_target_distribution.png")
-        evaluate.plot_target_distribution(y_test, labels, title=f"{name} Target Distribution", save_path=dist_path)
+        evaluate.plot_target_distribution(y_pred, labels, title=f"{name} Target Distribution", save_path=dist_path)
 
         #confusion matrix
         cm_path = os.path.join("models", f"{name.replace(' ', '_')}_confusion_matrix.png")
@@ -141,4 +145,4 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
 
 
 if __name__ == "__main__":
-    run_models(preprocess_method="minmax")
+    run_models(preprocess_method="none")
