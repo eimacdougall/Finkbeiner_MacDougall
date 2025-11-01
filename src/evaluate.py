@@ -2,38 +2,65 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics
 import numpy as np
+import pandas as pd
 
 def evaluate_model(y_true, y_pred):
     accuracy = metrics.accuracy_score(y_true, y_pred)
     conf_matrix = metrics.confusion_matrix(y_true, y_pred)
     return {"accuracy": accuracy, "conf_matrix": conf_matrix}
-
 def evaluate_regressive_model(y_true, y_pred):
     meanerror = metrics.mean_absolute_error(y_true, y_pred)
     return {"MAE": meanerror}
 
-def plot_residuals(y_true, y_pred, title = "residuals", save_path=None):
-    residuals = y_true - y_pred
-    plt.figure(figsize=(8, 6))
-    plt.scatter(y_pred, residuals, alpha=0.5)
-    plt.axhline(0, color='red', linestyle='--')
-    plt.xlabel("Predicted Values")
-    plt.ylabel("Residuals")
+#Plot 1: Target distribution
+def plot_target_distribution(y, labels=None, title="Target Distribution", save_path=None):
+    plt.figure(figsize=(8, 4))
+    sns.countplot(x=y, palette="pastel")
+    if labels is not None:
+        plt.xticks(ticks=np.arange(len(labels)), labels=labels, rotation=45)
     plt.title(title)
+    plt.xlabel("Class")
+    plt.ylabel("Count")
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path, bbox_inches="tight")
     plt.show()
     plt.close()
 
+#Plot 2: Correlation heatmap or boxplot
+#We can figure out which one later
+#When trying the heatmap it took forever
+#Too much data for the boxplot rn
+def plot_feature_correlations(X, method="heatmap", feature_names=None, save_path=None):
+    df = pd.DataFrame(X, columns=feature_names if feature_names is not None else None)
+
+    if method == "heatmap":
+        plt.figure(figsize=(8, 6))
+        corr = df.corr(numeric_only=True)
+        sns.heatmap(corr, cmap="coolwarm", center=0, annot=False)
+        plt.title("Feature Correlation Heatmap")
+    else:  #Boxplot
+        plt.figure(figsize=(10, 5))
+        sns.boxplot(data=df, orient="h", palette="Set2")
+        plt.title("Feature Value Distributions")
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+#Plot 3: Confusion matrix
 def plot_confusion_matrix(y_true, y_pred, labels, title="Confusion Matrix", cmap="Blues", normalize=False, save_path=None):
     cm = metrics.confusion_matrix(y_true, y_pred)
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
     plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='.2f' if normalize else 'd', cmap=cmap,
-                xticklabels=labels, yticklabels=labels)
+    sns.heatmap(
+        cm, annot=True, fmt='.2f' if normalize else 'd', cmap=cmap,
+        xticklabels=labels, yticklabels=labels
+    )
     plt.xlabel("Predicted")
     plt.ylabel("Actual")
     plt.title(title)
@@ -44,6 +71,23 @@ def plot_confusion_matrix(y_true, y_pred, labels, title="Confusion Matrix", cmap
     plt.show()
     plt.close()
 
+#Plot 4: Residuals vs predicted
+def plot_residuals_vs_predicted(y_true, y_pred, title="Residuals vs Predicted", save_path=None):
+    residuals = y_true - y_pred
+    plt.figure(figsize=(6, 4))
+    plt.scatter(y_pred, residuals, alpha=0.6, edgecolor="k")
+    plt.axhline(0, color="red", linestyle="--")
+    plt.title(title)
+    plt.xlabel("Predicted Values")
+    plt.ylabel("Residuals")
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+#Excess plots, not required by Tamayo
 def show_predictions(model_name, X, y_true, y_pred, labels, n=10, save_path=None):
     plt.figure(figsize=(15, 4))
     for i in range(n):

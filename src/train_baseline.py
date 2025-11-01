@@ -34,6 +34,17 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
     scaler_path = os.path.join("models", "scaler.pkl")
     joblib.dump(scaler, scaler_path)
 
+    #Plots for EDA
+    target_plot = os.path.join("models", "target_distribution.png")
+    evaluate.plot_target_distribution(y_train, labels, save_path=target_plot)
+
+    #Heatmap or boxplot of feature correlations
+    #This shit takes way to long for all samples with heatmap
+    #For boxplot it makes a grey blob because of the dataset size
+    #Probably just reduce the amount of data being fed for this
+    corr_plot = os.path.join("models", "feature_correlation_heatmap.png")
+    #evaluate.plot_feature_correlations(X_train_proc, save_path=corr_plot)
+
     #std values for regression (contrast)
     X_train_reg_proc, scaler = features.regression_preprocess(X_train)
     X_test_reg_proc = scaler.transform(X_test)
@@ -44,7 +55,7 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
 
     classification_models = {
         "Naive Bayes": MultinomialNB(),
-        "Logistic Regression": LogisticRegression(max_iter=2000, solver="lbfgs"),
+        "Logistic Regression": LogisticRegression(max_iter=100, solver="lbfgs"),
     }
     regression_models = {
         "Linear Regression":Pipeline([
@@ -97,6 +108,10 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             means_path = os.path.join("models", f"{name.replace(' ', '_')}_feature_means.png")
             evaluate.plot_naive_bayes_means(model, labels, save_path=means_path)
 
+        #Not sure how useful this is for classification (Naive Bayes) but whatever
+        residuals_path = os.path.join("models", f"{name.replace(' ', '_')}_residuals.png")
+        evaluate.plot_residuals_vs_predicted(y_test, y_pred, save_path=residuals_path)
+
         #Log everything to MLflow
         with mlflow.start_run(run_name=name):
             mlflow.log_param("model", name)
@@ -111,12 +126,16 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             mlflow.log_artifact(dist_path)
             if name == "Naive Bayes":
                 mlflow.log_artifact(means_path)
-    #classification accuracy comparison plot
+            if residuals_path:
+                mlflow.log_artifact(residuals_path)
+            mlflow.end_run()
+    #Accuracy comparison plot
     acc_path = os.path.join("models", "model_accuracy_comparison.png")
     evaluate.plot_model_accuracies(list(classification_models.keys()), accuracies, save_path=acc_path)
-    with mlflow.start_run(run_name="Model_Accuracy_Comparison"):
-        mlflow.log_artifact(acc_path)
-
+    mlflow.log_artifact(target_plot)
+    #mlflow.log_artifact(corr_plot)
+    mlflow.log_artifact(acc_path)
+    mlflow.end_run()
 
     ##regression 
     for name, model in regression_models.items():
@@ -136,7 +155,7 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
 
         #Plot and save artifacts
         cm_path = os.path.join("models", f"{name.replace(' ', '_')}_residuals.png")
-        evaluate.plot_residuals(y_test, y_pred, title=f"{name} residuals", save_path=cm_path)
+        evaluate.plot_residuals_vs_predicted(y_test, y_pred, title=f"{name} residuals", save_path=cm_path)
 
         pred_path = os.path.join("models", f"{name.replace(' ', '_')}_predictions.png")
         evaluate.plot_regression_predictions(y_test, y_pred, save_path=pred_path)
@@ -152,6 +171,7 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             #Log plot artifacts
             mlflow.log_artifact(cm_path)
             mlflow.log_artifact(pred_path)
+            mlflow.end_run()
 
 
 import matplotlib.pyplot as plt
