@@ -1,10 +1,13 @@
 import os
 import joblib
 import mlflow
+import numpy as np
 from mlflow.models import infer_signature
+from sklearn.discriminant_analysis import StandardScaler
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_absolute_error
 
@@ -19,6 +22,9 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
     #Load data
     X_train, y_train = data.load_mnist('data/fashion', kind='train')
     X_test, y_test = data.load_mnist('data/fashion', kind='t10k')
+
+    X_regression_train = np.std(X_train, axis=1)
+    X_regression_test = np.std(X_test, axis=1)
 
     #Preprocess
     X_train_proc, X_test_proc, scaler = features.preprocess(X_train, X_test, preprocess_method)
@@ -41,8 +47,14 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
         "Logistic Regression": LogisticRegression(max_iter=2000, solver="lbfgs"),
     }
     regression_models = {
-        "Linear Regression": LinearRegression(),
-        "Decision Tree Regressor": DecisionTreeRegressor(),
+        "Linear Regression":Pipeline([
+            ("scaler", StandardScaler()),
+            ("reg", LinearRegression())
+    ]),
+        "Decision Tree Regressor": Pipeline([
+            ("scaler", StandardScaler()),
+            ("reg", DecisionTreeRegressor()),
+    ]),
     }
 
     #In the terminal run mlflow ui then follow the link
@@ -51,7 +63,6 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
     mlflow.set_experiment("FashionMNIST_Baselines") #Just naming this goober
 
     accuracies = []
-
     ##classification models
     for name, model in classification_models.items():
         print(f"\nTraining classification {name}...")
@@ -143,6 +154,7 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             mlflow.log_artifact(pred_path)
 
 
-
+import matplotlib.pyplot as plt
+import numpy as np
 if __name__ == "__main__":
     run_models(preprocess_method="none")
