@@ -11,6 +11,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_absolute_error
 
+
 import data
 import features
 import evaluate
@@ -80,11 +81,17 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
         model.fit(X_train_proc, y_train)
         y_pred = model.predict(X_test_proc)
 
+
         #Evaluate
         metrics_dict = evaluate.evaluate_model(y_test, y_pred)
         print(f"{name} Accuracy: {metrics_dict['accuracy']:.4f}")
         accuracies.append(metrics_dict['accuracy'])
 
+        evaluate_model_cv_accuracy, evaluate_model_cv_accuracy_std = evaluate.evaluate_model_cv(model, X_train_proc, y_train, cv=5, scoring='accuracy')
+        print(f"{name} CV Accuracy: {evaluate_model_cv_accuracy:.4f} (+/- {evaluate_model_cv_accuracy_std:.4f})")
+        evaluate_model_cv_f1, evaluate_model_cv__f1_std = evaluate.evaluate_model_cv(model, X_train_proc, y_train, cv=5, scoring='f1')
+        print(f"{name} CV f1: {evaluate_model_cv_f1:.4f} (+/- {evaluate_model_cv__f1_std:.4f})")
+        
         #Save model in models // I wanted to have it like the mlartifacts folder which has everything but mlflow saves there automatically
         #idk how to fix that right now
         model_path = os.path.join("models", f"{name.replace(' ', '_')}.pkl")
@@ -117,6 +124,10 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             mlflow.log_param("model", name)
             mlflow.log_param("preprocess", preprocess_method)
             mlflow.log_metric("accuracy", metrics_dict["accuracy"])
+            mlflow.log_metric("CV_Accuracy", evaluate_model_cv_accuracy)    
+            mlflow.log_metric("CV_Accuracy_STD", evaluate_model_cv_accuracy_std)
+            mlflow.log_metric("CV_f1", evaluate_model_cv_f1)
+            mlflow.log_metric("CV_f1_STD", evaluate_model_cv__f1_std)
             signature = infer_signature(X_train_proc, model.predict(X_train_proc))
             mlflow.sklearn.log_model(model, f"{name.replace(' ', '_')}_model", signature=signature)
 
@@ -148,6 +159,11 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
         print(f"{name} MAE: {metrics_dict['MAE']:.4f}")
         accuracies.append(metrics_dict['MAE'])
 
+        evaluate_model_cv_mae, evaluate_model_cv_mae_std = evaluate.evaluate_model_cv(model, X_train_proc, y_train, cv=5, scoring='neg_mean_absolute_error')
+        print(f"{name} CV MAE: {evaluate_model_cv_mae:.4f} (+/- {evaluate_model_cv_mae_std:.4f})")
+        evaluate_model_cv_rmse, evaluate_model_cv_rmse_std = evaluate.evaluate_model_cv(model, X_train_proc, y_train, cv=5, scoring='neg_root_mean_squared_error')
+        print(f"{name} CV RMSE: {evaluate_model_cv_rmse:.4f} (+/- {evaluate_model_cv_rmse_std:.4f})")
+
         #Save model in models 
         #idk how to fix what ethan wanted to fix either
         model_path = os.path.join("models", f"{name.replace(' ', '_')}.pkl")
@@ -165,6 +181,11 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             mlflow.log_param("model", name)
             mlflow.log_param("preprocess", preprocess_method)
             mlflow.log_metric("MAE", metrics_dict["MAE"])
+            mlflow.log_metric("RMSE", mean_absolute_error(y_test, y_pred))
+            mlflow.log_metric("CV_MAE", evaluate_model_cv_mae)
+            mlflow.log_metric("CV_MAE_STD", evaluate_model_cv_mae_std)
+            mlflow.log_metric("CV_RMSE", evaluate_model_cv_rmse)
+            mlflow.log_metric("CV_RMSE_STD", evaluate_model_cv_rmse_std)
             signature = infer_signature(X_train_reg_proc, model.predict(X_train_reg_proc))
             mlflow.sklearn.log_model(model, f"{name.replace(' ', '_')}_model", signature=signature)
 

@@ -3,6 +3,12 @@ import seaborn as sns
 from sklearn import metrics
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import cross_val_score
+
+
+def evaluate_model_cv(model, X, y, cv=5,scoring='accuracy'):
+    cv_scores = cross_val_score(model, X, y, cv=cv, scoring='accuracy')
+    return cv_scores.mean(), cv_scores.std()
 
 def evaluate_model(y_true, y_pred):
     accuracy = metrics.accuracy_score(y_true, y_pred)
