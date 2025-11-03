@@ -15,6 +15,7 @@ from sklearn.metrics import mean_absolute_error
 import data
 import features
 import evaluate
+from utils import set_seed
 
 labels = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
           'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -40,9 +41,6 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
     evaluate.plot_target_distribution(y_train, labels, save_path=target_plot)
 
     #Heatmap or boxplot of feature correlations
-    #This shit takes way to long for all samples with heatmap
-    #For boxplot it makes a grey blob because of the dataset size
-    #Probably just reduce the amount of data being fed for this
     corr_plot = os.path.join("models", "feature_correlation_heatmap.png")
     #evaluate.plot_feature_correlations(X_train_proc, save_path=corr_plot)
 
@@ -56,7 +54,7 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
 
     classification_models = {
         "Naive Bayes": MultinomialNB(),
-        "Logistic Regression": LogisticRegression(max_iter=100, solver="lbfgs"),
+        "Logistic Regression": LogisticRegression(max_iter=2000, solver="lbfgs"),
     }
     regression_models = {
         "Linear Regression":Pipeline([
@@ -78,9 +76,11 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
     ##classification models
     for name, model in classification_models.items():
         print(f"\nTraining classification {name}...")
+        #Set the seed here so every run is reproducible
+        set_seed(42)
+
         model.fit(X_train_proc, y_train)
         y_pred = model.predict(X_test_proc)
-
 
         #Evaluate
         metrics_dict = evaluate.evaluate_model(y_test, y_pred)
@@ -115,13 +115,13 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             means_path = os.path.join("models", f"{name.replace(' ', '_')}_feature_means.png")
             evaluate.plot_naive_bayes_means(model, labels, save_path=means_path)
 
-        #Not sure how useful this is for classification (Naive Bayes) but whatever
         residuals_path = os.path.join("models", f"{name.replace(' ', '_')}_residuals.png")
         evaluate.plot_residuals_vs_predicted(y_test, y_pred, save_path=residuals_path)
 
         #Log everything to MLflow
         with mlflow.start_run(run_name=name):
             mlflow.log_param("model", name)
+            mlflow.log_param("seed", 42)
             mlflow.log_param("preprocess", preprocess_method)
             mlflow.log_metric("accuracy", metrics_dict["accuracy"])
             mlflow.log_metric("CV_Accuracy", evaluate_model_cv_accuracy)    
@@ -139,18 +139,21 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
                 mlflow.log_artifact(means_path)
             if residuals_path:
                 mlflow.log_artifact(residuals_path)
-            mlflow.end_run()
+            #mlflow.end_run()
     #Accuracy comparison plot
     acc_path = os.path.join("models", "model_accuracy_comparison.png")
     evaluate.plot_model_accuracies(list(classification_models.keys()), accuracies, save_path=acc_path)
     mlflow.log_artifact(target_plot)
     #mlflow.log_artifact(corr_plot)
     mlflow.log_artifact(acc_path)
-    mlflow.end_run()
+    #mlflow.end_run()
 
     ##regression 
     for name, model in regression_models.items():
         print(f"\nTraining regression {name}...")
+        #Set the seed here so every run is reproducible
+        set_seed(42)
+
         model.fit(X_train_reg_proc, y_train)
         y_pred = model.predict(X_test_reg_proc)
 
@@ -179,6 +182,7 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
         #Log everything to MLflow
         with mlflow.start_run(run_name=name):
             mlflow.log_param("model", name)
+            mlflow.log_param("seed", 42)
             mlflow.log_param("preprocess", preprocess_method)
             mlflow.log_metric("MAE", metrics_dict["MAE"])
             mlflow.log_metric("RMSE", mean_absolute_error(y_test, y_pred))
@@ -192,10 +196,7 @@ def run_models(preprocess_method="minmax"): #Look at the features.py for options
             #Log plot artifacts
             mlflow.log_artifact(cm_path)
             mlflow.log_artifact(pred_path)
-            mlflow.end_run()
+            #mlflow.end_run()
 
-
-import matplotlib.pyplot as plt
-import numpy as np
 if __name__ == "__main__":
-    run_models(preprocess_method="none")
+    run_models(preprocess_method="none") #Currently does not use preprocessing method for classification models
