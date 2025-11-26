@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import cross_val_score
 
-
 def evaluate_model_cv(model, X, y, cv=5,scoring='accuracy'):
     cv_scores = cross_val_score(model, X, y, cv=cv, scoring='accuracy')
     return cv_scores.mean(), cv_scores.std()
@@ -14,6 +13,7 @@ def evaluate_model(y_true, y_pred):
     accuracy = metrics.accuracy_score(y_true, y_pred)
     conf_matrix = metrics.confusion_matrix(y_true, y_pred)
     return {"accuracy": accuracy, "conf_matrix": conf_matrix}
+
 def evaluate_regressive_model(y_true, y_pred):
     meanerror = metrics.mean_absolute_error(y_true, y_pred)
     return {"MAE": meanerror}
@@ -92,6 +92,86 @@ def plot_residuals_vs_predicted(y_true, y_pred, title="Residuals vs Predicted", 
         plt.savefig(save_path, bbox_inches="tight")
     plt.show()
     plt.close()
+
+
+#Plots for final report
+#Plot 1: Learning Curve classification NN (training and validation metric vs epochs)
+def plot_classification_learning_curve(history, save_path=None):
+    plt.figure(figsize=(12, 5))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['accuracy'], label='Train Accuracy')
+
+    if 'val_accuracy' in history.history:
+        plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+
+    plt.title("Learning Curve (Classification Accuracy)")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['loss'], label='Train Loss')
+
+    if 'val_loss' in history.history:
+        plt.plot(history.history['val_loss'], label='Validation Loss')
+
+    plt.title("Learning Curve (Classification Loss)")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+
+    plt.show()
+
+#Plot 2: Learning Curve Regresssion NN (training and validation loss vs epochs).
+def plot_regression_learning_curve(history, save_path=None):
+    plt.figure(figsize=(10, 5))
+
+    #Loss
+    plt.plot(history.history['loss'], label='Train Loss')
+
+    if 'val_loss' in history.history:
+        plt.plot(history.history['val_loss'], label='Validation Loss')
+
+    plt.title("Learning Curve (Regression Loss)")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+
+    plt.show()
+
+#Plot 3: Confusion matrix for the best final classification model (classical or NN) on the test set
+#def plot_confusion_matrix(y_true, y_pred, labels, title="Confusion Matrix", cmap="Blues", normalize=False, save_path=None):
+#or
+#def evaluate_model(y_true, y_pred):  ?
+
+#Plot 4: Residuals vs predicted for the best final regression model on the test set
+#def plot_residuals_vs_predicted(y_true, y_pred, title="Residuals vs Predicted", save_path=None):
+
+#Plot 5: Feature importance or ablation result (for example permutation importance on a classical model, or simple ablation on engineered features for the NN)
+
+
+#Table 1 – Classification comparison: best classical vs NN on validation and test with Accuracy and F1 or ROC-AUC
+def evaluate_precision_recall_f1(y_true, y_pred):
+    precision = metrics.precision_score(y_true, y_pred, average='weighted')
+    recall = metrics.recall_score(y_true, y_pred, average='weighted')
+    f1 = metrics.f1_score(y_true, y_pred, average='weighted')
+    report = metrics.classification_report(y_true, y_pred)
+    return {"precision": precision, "recall": recall, "f1": f1, "report": report}
+
+#Table 2 – Regression comparison: best classical vs NN on validation and test with MAE and RMSE
+#def evaluate_regressive_model(y_true, y_pred):
+
+
 
 #Excess plots, not required by Tamayo
 def show_predictions(model_name, X, y_true, y_pred, labels, n=10, save_path=None):
