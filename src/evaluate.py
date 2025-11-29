@@ -79,6 +79,13 @@ def plot_confusion_matrix(y_true, y_pred, labels, title="Confusion Matrix", cmap
 
 #Plot 4: Residuals vs predicted
 def plot_residuals_vs_predicted(y_true, y_pred, title="Residuals vs Predicted", save_path=None):
+    # Handle classification predictions
+    if y_pred.ndim == 2 and y_pred.shape[1] == 10:
+        y_pred = np.argmax(y_pred, axis=1)
+
+    # Handle regression predictions
+    if y_pred.ndim > 1:
+        y_pred = y_pred.squeeze()
     residuals = y_true - y_pred
     plt.figure(figsize=(6, 4))
     plt.scatter(y_pred, residuals, alpha=0.6, edgecolor="k")
@@ -170,6 +177,10 @@ def evaluate_precision_recall_f1(y_true, y_pred):
 
 #Table 2 – Regression comparison: best classical vs NN on validation and test with MAE and RMSE
 #def evaluate_regressive_model(y_true, y_pred):
+
+def evaluate_regression_rmse(y_true, y_pred):
+    rmse = np.sqrt(metrics.mean_squared_error(y_true, y_pred))
+    return rmse
 
 
 
