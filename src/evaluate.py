@@ -158,14 +158,34 @@ def plot_regression_learning_curve(history, save_path=None):
 
 #Plot 3: Confusion matrix for the best final classification model (classical or NN) on the test set
 #def plot_confusion_matrix(y_true, y_pred, labels, title="Confusion Matrix", cmap="Blues", normalize=False, save_path=None):
-#or
-#def evaluate_model(y_true, y_pred):  ?
 
 #Plot 4: Residuals vs predicted for the best final regression model on the test set
 #def plot_residuals_vs_predicted(y_true, y_pred, title="Residuals vs Predicted", save_path=None):
 
 #Plot 5: Feature importance or ablation result (for example permutation importance on a classical model, or simple ablation on engineered features for the NN)
+def run_ablation_study(create_model_func, x_train, y_train, x_test, y_test, param_name, param_values, epochs=5, batch_size=128, metric='accuracy'):
+    scores = []
+    for val in param_values:
+        print(f"Running ablation for {param_name} = {val}")
+        model = create_model_func(**{param_name: val})
+        model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1, verbose=0)
+        loss, accuracy = model.evaluate(x_test, y_test, verbose=0)
+        if metric == 'accuracy':
+            scores.append(accuracy)
+        else:
+            scores.append(loss)
+    return param_values, scores
 
+def plot_ablation(param_values, scores, param_name, metric='accuracy', save_path=None):
+    plt.figure()
+    plt.plot(param_values, scores, marker='o')
+    plt.title(f'{metric.capitalize()} vs {param_name.replace("_", " ").capitalize()}')
+    plt.xlabel(param_name.replace("_", " ").capitalize())
+    plt.ylabel(metric.capitalize())
+    plt.grid(True)
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
 
 #Table 1 – Classification comparison: best classical vs NN on validation and test with Accuracy and F1 or ROC-AUC
 def evaluate_precision_recall_f1(y_true, y_pred):
