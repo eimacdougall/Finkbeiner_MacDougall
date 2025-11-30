@@ -78,8 +78,8 @@ tuner = RandomSearch(
 
 #define callbacks
 callbacks = [
-    tf.keras.callbacks.EarlyStopping(patience=3, restore_best_weights=True),
-    tf.keras.callbacks.ReduceLROnPlateau(factor=0.3, patience=2)
+    tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
+    tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=2)
 ]
 
 #search for best hyperparameters and build the best model

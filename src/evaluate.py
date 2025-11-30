@@ -193,14 +193,14 @@ def evaluate_precision_recall_f1(y_true, y_pred):
     recall = metrics.recall_score(y_true, y_pred, average='weighted')
     f1 = metrics.f1_score(y_true, y_pred, average='weighted')
     report = metrics.classification_report(y_true, y_pred)
-    return {"precision": precision, "recall": recall, "f1": f1, "report": report}
+    return {"precision": float(precision), "recall": float(recall), "f1": float(f1), "report": report}
 
 #Table 2 – Regression comparison: best classical vs NN on validation and test with MAE and RMSE
 #def evaluate_regressive_model(y_true, y_pred):
 
 def evaluate_regression_rmse(y_true, y_pred):
     rmse = np.sqrt(metrics.mean_squared_error(y_true, y_pred))
-    return rmse
+    return float(rmse)
 
 
 
