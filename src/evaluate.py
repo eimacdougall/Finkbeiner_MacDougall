@@ -92,7 +92,7 @@ def plot_residuals_vs_predicted(y_true, y_pred, title="Residuals vs Predicted", 
     plt.axhline(0, color="red", linestyle="--")
     plt.title(title)
     plt.xlabel("Predicted Values")
-    plt.ylabel("Residuals")
+    plt.ylabel("Residuals") 
     plt.tight_layout()
 
     if save_path:
@@ -202,6 +202,57 @@ def ablation_importance(model, X_val, y_val, metric='mse', save_path=None):
         importances.append(importance)
 
     return np.array(importances)
+
+def ablation_importance_patch(model, val_images, y_true, patch_size=4, metric='accuracy'):
+    baseline_pred = model.predict(val_images, verbose=0)
+    
+    if metric == 'accuracy':
+        def score(pred): 
+            return np.mean(np.argmax(pred, axis=1) == y_true)
+    else:
+        raise ValueError("Only 'accuracy' metric is supported for classification.")
+
+    baseline_score = score(baseline_pred)
+    
+    H, W = val_images.shape[1], val_images.shape[2]
+    n_patches_h = H // patch_size
+    n_patches_w = W // patch_size
+    
+    importances = np.zeros((n_patches_h, n_patches_w))
+
+    for i in range(n_patches_h):
+        for j in range(n_patches_w):
+            X_masked = val_images.copy()
+            
+            # Mask the patch replace with mean pixel value
+            h_start = i * patch_size
+            h_end = h_start + patch_size
+            w_start = j * patch_size
+            w_end = w_start + patch_size
+            
+            X_masked[:, h_start:h_end, w_start:w_end, :] = np.mean(val_images[:, h_start:h_end, w_start:w_end, :], axis=(1,2), keepdims=True)
+            
+            pred = model.predict(X_masked, verbose=0)
+            ablated_score = score(pred)
+            
+            # For accuracy importance = baseline - ablated
+            importances[i, j] = baseline_score - ablated_score
+            
+    return importances
+
+def plot_patch_importance(importances, patch_size=4, save_path=None):
+    # Upsample to image size for visualization
+    H, W = importances.shape
+    importance_img = np.kron(importances, np.ones((patch_size, patch_size)))
+    
+    plt.figure(figsize=(6,6))
+    plt.imshow(importance_img, cmap='hot', interpolation='nearest')
+    plt.colorbar(label='Importance')
+    plt.title('Patch-wise Ablation Importance')
+    plt.axis('off')
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+    plt.show()
 
 def run_ablation_study(create_model_func, x_train, y_train, x_test, y_test, param_name, param_values, epochs=5, batch_size=128, metric='accuracy'):
     scores = []

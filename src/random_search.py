@@ -6,7 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import evaluate
 import data
-import os
+import mlflow
+import mlflow.tensorflow
 
 labels = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
           'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -39,7 +40,7 @@ print(f"test shape after reshape: {test_images.shape}")
 def build_model(hp):
     model = tf.keras.Sequential([
         tf.keras.layers.Conv2D(
-            filters=hp.Choice('filters', [32, 64, 96]),
+            filters=hp.Choice('filters', [32, 64, 96, 128]),
             kernel_size=3,
             activation='relu',
             padding='same',
@@ -82,25 +83,45 @@ callbacks = [
     tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=2)
 ]
 
-#search for best hyperparameters and build the best model
-tuner.search(train_images, train_labels, epochs=10, validation_split=0.1, batch_size=64, callbacks=callbacks)
-best_hp = tuner.get_best_hyperparameters()[0]
-best_model = tuner.hypermodel.build(best_hp)
+# MLflow experiment
+mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_experiment("Fashion_MNIST_KerasTuner")
 
-#train on train data
-best_model.fit(
-    train_images, train_labels,
-    epochs=10,
-    validation_split=0.1,
-    batch_size=64,
-    callbacks=callbacks
-)
-
-# Evaluate the model with test data (no data leak)
-test_loss, test_acc = best_model.evaluate(test_images, test_labels, verbose=2)
-print("Best test accuracy:", test_acc, test_loss)
-
-predictions = best_model.predict(test_images)
-(predictions[0])
-np.argmax(predictions[0])
-
+with mlflow.start_run(run_name="RandomSearch_Run"):
+    # Search for best hyperparameters
+    tuner.search(train_images, train_labels, epochs=10, validation_split=0.1,
+                 batch_size=128, callbacks=callbacks)
+    
+    best_hp = tuner.get_best_hyperparameters()[0]
+    best_model = tuner.hypermodel.build(best_hp)
+    
+    # Log hyperparameters
+    mlflow.log_param("filters", best_hp.get('filters'))
+    mlflow.log_param("dense_units", best_hp.get('dense_units'))
+    mlflow.log_param("dropout", best_hp.get('dropout'))
+    mlflow.log_param("learning_rate", best_hp.get('lr'))
+    
+    # Train best model
+    history = best_model.fit(
+        train_images, train_labels,
+        epochs=10,
+        validation_split=0.1,
+        batch_size=64,
+        callbacks=callbacks
+    )
+    
+    # Log metrics from training
+    for epoch, acc in enumerate(history.history['accuracy']):
+        mlflow.log_metric("train_accuracy", acc, step=epoch)
+    for epoch, val_acc in enumerate(history.history['val_accuracy']):
+        mlflow.log_metric("val_accuracy", val_acc, step=epoch)
+    
+    # Evaluate on test data
+    test_loss, test_acc = best_model.evaluate(test_images, test_labels, verbose=2)
+    mlflow.log_metric("test_accuracy", test_acc)
+    mlflow.log_metric("test_loss", test_loss)
+    
+    print("Best test accuracy:", test_acc, test_loss)
+    
+    # Log the model
+    mlflow.keras.log_model(best_model, "fashion_mnist_model")
