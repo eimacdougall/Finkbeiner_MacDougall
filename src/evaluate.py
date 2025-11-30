@@ -163,6 +163,46 @@ def plot_regression_learning_curve(history, save_path=None):
 #def plot_residuals_vs_predicted(y_true, y_pred, title="Residuals vs Predicted", save_path=None):
 
 #Plot 5: Feature importance or ablation result (for example permutation importance on a classical model, or simple ablation on engineered features for the NN)
+def ablation_importance(model, X_val, y_val, metric='mse', save_path=None):
+    """
+    Compute feature ablation importance.
+    metric: 'mse' or 'mae' or 'accuracy' (for classification)
+    """
+    baseline_pred = model.predict(X_val, verbose=0)
+
+    if metric == 'mse':
+        def score(pred): return np.mean((pred - y_val)**2)
+    elif metric == 'mae':
+        def score(pred): return np.mean(np.abs(pred - y_val))
+    elif metric == 'accuracy':
+        def score(pred): return np.mean(np.argmax(pred, axis=1) == y_val)
+    else:
+        raise ValueError("Unknown metric")
+
+    baseline_score = score(baseline_pred)
+    importances = []
+
+    for i in range(X_val.shape[1]):
+        X_masked = X_val.copy()
+
+        # Default masking strategy: replace with mean
+        X_masked[:, i] = np.mean(X_val[:, i])
+
+        pred = model.predict(X_masked, verbose=0)
+        ablated_score = score(pred)
+
+        # For loss metrics, importance is ablated_score - baseline_score
+        # For accuracy, importance is baseline_accuracy - ablated_accuracy
+        importance = (
+            ablated_score - baseline_score
+            if metric != 'accuracy'
+            else baseline_score - ablated_score
+        )
+
+        importances.append(importance)
+
+    return np.array(importances)
+
 def run_ablation_study(create_model_func, x_train, y_train, x_test, y_test, param_name, param_values, epochs=5, batch_size=128, metric='accuracy'):
     scores = []
     for val in param_values:
