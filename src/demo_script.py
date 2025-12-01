@@ -1,15 +1,12 @@
 #all da imports
+from matplotlib import pyplot as plt
 import tensorflow as tf
-from keras import regularizers
 # Helper libraries
 import numpy as np
-import matplotlib.pyplot as plt
 import data
-from features import regression_preprocess
 import random
-import mlflow.tensorflow
 import mlflow
-from evaluate import plot_confusion_matrix, plot_classification_learning_curve, show_predictions
+from evaluate import plot_confusion_matrix, show_predictions
 
 #set seed
 seed = 42
@@ -58,4 +55,13 @@ predicted = np.argmax(model.predict(test_images), axis=1)
 confusion_matrix = plot_confusion_matrix(test_labels, predicted, labels, normalize=False, save_path="models/confusion_matrix.png")
 
 model_name = "classification network"
-show_predictions(model_name, test_images_raw, test_labels, predicted, labels)
+idx = np.random.choice(len(test_images_raw), 15)
+pred = []
+pred_label = []
+true = []
+for i in idx:
+    pred.append(test_images_raw[i])
+    pred_label.append(predicted[i])
+    true.append(test_labels[i])
+show_predictions(model_name, pred , true, pred_label, labels)
+
